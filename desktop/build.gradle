@@ -1,0 +1,37 @@
+apply plugin: "java"
+
+//sourceCompatibility = 1.8
+sourceSets.main.java.srcDirs = [ "src/" ]
+
+project.ext.mainClassName = "primeditor.desktop.DesktopLauncher"
+project.ext.assetsDir = new File("../core/assets")
+
+task run(dependsOn: classes, type: JavaExec) {
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = project.assetsDir
+    ignoreExitValue = true
+
+    if(System.getProperty("os.name").toLowerCase().contains("mac")){
+        jvmArgs("-XstartOnFirstThread", "-Djava.awt.headless=true")
+    }
+}
+
+task dist(type: Jar, dependsOn: [classes, configurations.runtimeClasspath]) {
+    from files(sourceSets.main.output.classesDirs)
+    from files(sourceSets.main.output.resourcesDir)
+    from {configurations.runtimeClasspath.collect {zipTree(it)}}
+    from files(project.assetsDir);
+
+    //use target = all for all platforms
+    def target = project.hasProperty("target") ? project.properties["target"] : "windows";
+    if(target == "windows") exclude('**.so', "**.dylib")
+    if(target == "mac") exclude('**.so', "**.dll")
+    if(target == "linux") exclude('**.dll', "**.dylib")
+    archivesBaseName = appName + "-" + target
+
+    manifest {
+        attributes 'Main-Class': project.mainClassName
+    }
+}

@@ -1,0 +1,64 @@
+buildscript{
+    repositories{
+        mavenLocal()
+        mavenCentral()
+        maven{ url 'https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository' }
+        maven{ url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven{ url "https://jitpack.io" }
+    }
+
+    ext{
+        arcHash = "v146"
+        
+        arcModule = { String name ->
+            //skip to last submodule
+            name = name.substring(name.lastIndexOf(':') + 1)
+            return "com.github.Anuken.Arc:$name:$arcHash"
+        }
+    }
+
+    dependencies{
+        classpath "com.github.Anuken.Arc:packer:$arcHash"
+        classpath "com.github.Anuken.Arc:arc-core:$arcHash"
+    }
+}
+
+allprojects{
+    version = 'dev'
+
+    ext{
+        appName = "PrimEditor"
+        
+        //arcModule = { String name -> return project(":Arc:$name") }
+    }
+
+    repositories{
+        mavenLocal()
+        mavenCentral()
+        maven{ url 'https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository' }
+        maven{ url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven{ url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven{ url 'https://jitpack.io' }
+    }
+}
+
+project(":core"){
+    apply plugin: "java-library"
+
+    dependencies{
+        api arcModule("arc-core")
+        api arcModule("extensions:freetype")
+        api arcModule("extensions:flabel")
+    }
+}
+
+project(":desktop"){
+    apply plugin: "java"
+
+    dependencies{
+        implementation project(":core")
+        implementation arcModule("backends:backend-sdl")
+        implementation arcModule("natives:natives-desktop")
+        implementation arcModule("natives:natives-freetype-desktop")
+    }
+}

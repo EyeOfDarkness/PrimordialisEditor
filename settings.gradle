@@ -1,0 +1,15 @@
+include 'core', 'desktop'
+
+def use = { String name ->
+    include(name)
+    project(name).projectDir = new File(settingsDir, "../${name.substring(1).replace(":", "/")}")
+}
+
+use(':Arc')
+use(':Arc:arc-core')
+use(':Arc:extensions')
+use(':Arc:extensions:flabel')
+use(':Arc:backends')
+use(':Arc:backends:backend-sdl')
+use(':Arc:natives')
+use(':Arc:natives:natives-desktop')
