@@ -2,13 +2,14 @@ package primeditor.utils;
 
 import arc.math.*;
 import arc.struct.*;
+import primeditor.*;
 import primeditor.creature.*;
 import primeditor.creature.CellTypes.*;
 import primeditor.creature.Creature.*;
 
 public class Undo{
     //Seq<ShortSeq> history = new Seq<>(ShortSeq.class);
-    IntSeq[] history = new IntSeq[9];
+    IntSeq[] history = new IntSeq[EditorMain.undoHistoryLimit + 1];
     int idx = 0;
 
     int uid = 0;
@@ -61,23 +62,6 @@ public class Undo{
             seq.clear();
             uid = 0;
         }
-    }
-
-    public void register(Creature creature){
-        IntSeq seq = history[Mathf.mod(idx, history.length)];
-        for(Cell c : creature.changed){
-            //format 4 = 1 color, 2 no cell
-            //type 4
-            //x 4, y 4
-            //r 8
-            //g 8
-            //b 8
-            //a 8
-            Cell c2 = creature.cellGrid[c.getGPos()];
-
-            write(seq, c2, c);
-        }
-        flush();
     }
 
     public void registerIndividual(Cell next){

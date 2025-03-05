@@ -29,6 +29,8 @@ public class EditorMain extends ApplicationCore{
     public static Fi source;
     public static Creature creature;
 
+    public static int undoHistoryLimit = 8;
+
     public static void loadCreature(File file){
         if(creature != null) creature.dispose();
         Control.undo.clear();

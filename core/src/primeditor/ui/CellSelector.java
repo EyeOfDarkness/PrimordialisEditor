@@ -42,7 +42,7 @@ public class CellSelector extends Table{
             group.add(b);
             buttonMap.put(ct, b);
             i++;
-            if(i >= 4){
+            if(i >= 5){
                 cont.row();
                 i = 0;
             }

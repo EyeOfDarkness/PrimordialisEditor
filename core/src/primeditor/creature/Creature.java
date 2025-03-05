@@ -104,25 +104,41 @@ public class Creature{
             }
         }
         for(int i = 0; i < cellCount; i++){
-            var c = new Cell();
-            c.type = CellTypes.get(reads.i());
+            //var c = new Cell();
+            var type = CellTypes.get(reads.i());
+            //c.type = CellTypes.get(reads.i());
             //c.arrayIdx = i;
-            c.arrayIdx = cells2.size;
+            //c.arrayIdx = cells2.size;
 
             float r = reads.f();
             float g = reads.f();
             float b = reads.f();
             float a = reads.f();
+            //c.r = r;
+            //c.g = g;
+            //c.b = b;
+            //c.a = a;
+            //c.rgba = Tmp.c1.set(r, g, b, a).toFloatBits();
+            //Log.info(c.type.name + " r:" + c.r + " g:" + c.g + " b:" + c.b);
+
+            //c.x = reads.i();
+            //c.y = reads.i();
+            int cx = reads.i();
+            int cy = reads.i();
+            if(version <= 2) reads.i();//????
+            int ix = cx + 1024, iy = cy + 1024;
+            if(ix < 0 || ix >= 2048 || iy < 0 || iy >= 2048){
+                continue;
+            }
+            var c = new Cell();
+            c.type = type;
+            c.arrayIdx = cells2.size;
+            c.x = cx;
+            c.y = cy;
             c.r = r;
             c.g = g;
             c.b = b;
             c.a = a;
-            //c.rgba = Tmp.c1.set(r, g, b, a).toFloatBits();
-            //Log.info(c.type.name + " r:" + c.r + " g:" + c.g + " b:" + c.b);
-
-            c.x = reads.i();
-            c.y = reads.i();
-            if(version <= 2) reads.i();//????
             //cells[i] = c;
             cells2.add(c);
             cellGrid[c.getGPos()] = c;
