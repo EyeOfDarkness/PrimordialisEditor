@@ -11,12 +11,15 @@ import primeditor.creature.*;
 import primeditor.creature.CellTypes.*;
 import primeditor.creature.Creature.*;
 
+import static primeditor.EditorMain.canvasRes;
+import static primeditor.EditorMain.hRes;
+
 public class Fill{
     CellType target;
     Color targetColor = new Color();
     boolean paintMode;
     boolean invalid;
-    boolean replace, fromColor;
+    boolean replace, fromColor, onlyCell;
 
     Color fillColor = new Color();
     CellType fillCell;
@@ -37,6 +40,7 @@ public class Fill{
         f.paintMode = fillCell == null;
         f.replace = Core.input.keyDown(KeyCode.shiftLeft);
         f.fromColor = Core.input.keyDown(KeyCode.controlLeft) && fillCell != null;
+        f.onlyCell = Core.input.keyDown(KeyCode.altLeft) && fillCell != null;
 
         //Point2 p = Pools.obtain(Point2.class, Point2::new);
         //p.set(x, y);
@@ -89,10 +93,12 @@ public class Fill{
                     if(!fromColor){
                         if(c.type == target){
                             Control.undo.setReference(c);
-                            c.r = fillColor.r;
-                            c.g = fillColor.g;
-                            c.b = fillColor.b;
-                            c.a = fillColor.a;
+                            if(!onlyCell){
+                                c.r = fillColor.r;
+                                c.g = fillColor.g;
+                                c.b = fillColor.b;
+                                c.a = fillColor.a;
+                            }
                             c.type = fillCell;
                             creature.changed.add(c);
                             Control.undo.registerIndividual(c);
@@ -124,17 +130,19 @@ public class Fill{
                 if(cell == null){
                     if(paintMode || fromColor) continue;
                     cell = new Cell();
-                    cell.x = px - 1024;
-                    cell.y = py - 1024;
+                    cell.x = px - hRes;
+                    cell.y = py - hRes;
                     cell.added = true;
                     //creature.cellGrid[Control.toGrid(px, py)] = cell;
                 }
 
                 if(!fromColor){
-                    cell.r = fillColor.r;
-                    cell.g = fillColor.g;
-                    cell.b = fillColor.b;
-                    cell.a = fillColor.a;
+                    if(!onlyCell){
+                        cell.r = fillColor.r;
+                        cell.g = fillColor.g;
+                        cell.b = fillColor.b;
+                        cell.a = fillColor.a;
+                    }
                     if(!paintMode){
                         cell.type = fillCell;
                     }
@@ -142,7 +150,7 @@ public class Fill{
                     cell.type = fillCell;
                 }
                 //occupied[p.x + p.y * 2048] = true;
-                tmpSet.add(px + py * 2048);
+                tmpSet.add(px + py * canvasRes);
 
                 creature.changed.add(cell);
                 Control.undo.registerIndividual(cell);
@@ -150,9 +158,9 @@ public class Fill{
                 for(Point2 p2 : Control.hexagonEdge){
                     int nx = px + p2.x;
                     int ny = py + p2.y;
-                    if(nx >= 0 && nx < 2048 && ny >= 0 && ny < 2048){
-                        if(!tmpSet.contains(nx + ny * 2048)){
-                            tmpSet.add(nx + ny * 2048);
+                    if(nx >= 0 && nx < canvasRes && ny >= 0 && ny < canvasRes){
+                        if(!tmpSet.contains(nx + ny * canvasRes)){
+                            tmpSet.add(nx + ny * canvasRes);
                             Cell nc = creature.cellGrid[Control.toGrid(nx, ny)];
                             if(nc == null){
                                 if(target == null && !paintMode){

@@ -30,6 +30,10 @@ public class EditorMain extends ApplicationCore{
     public static Creature creature;
 
     public static int undoHistoryLimit = 8;
+    public static int canvasRes = 4096;
+    //public final static int canvasRes = 2048;
+    public final static int hRes = canvasRes / 2;
+    public final static int chunks = 8;
 
     public static void loadCreature(File file){
         if(creature != null) creature.dispose();
@@ -63,6 +67,8 @@ public class EditorMain extends ApplicationCore{
 		add(world = new World());
 		add(ui = new UI());
         */
+        //camera = new Camera();
+        //camera = new RotateCamera();
         
         add(renderer = new Renderer());
         add(ui = new UI());
@@ -71,7 +77,9 @@ public class EditorMain extends ApplicationCore{
         CellTypes.load();
         Control.loadBrush();
         Shaders.load();
-        Shaders.render.updateCells();
+        //Shaders.render.updateCells();
+        //Shaders.render2.updateCells();
+        Shaders.main.updateTypes();
 
         keybinds.setDefaults(Binding.values());
         //ui.setup();
