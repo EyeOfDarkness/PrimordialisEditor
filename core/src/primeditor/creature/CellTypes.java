@@ -85,7 +85,7 @@ public class CellTypes{
             //Log.info("Cell Type: " + name.toLowerCase() + " : " + Integer.toHexString(type));
         }
 
-        Color getType(){
+        public Color getType(){
             float f1 = (id / 8f) % 1f;
             float f2 = ((int)(id / 8f) / 8f) % 1f;
             float f3 = (int)(id / (8f * 8f)) / 8f;

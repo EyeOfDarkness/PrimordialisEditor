@@ -5,6 +5,8 @@ import arc.graphics.g2d.*;
 import arc.graphics.gl.*;
 import primeditor.graphics.Shaders.*;
 
+import static primeditor.EditorMain.canvasRes;
+
 public class BlankBatch extends Batch{
     public static final int VERTEX_SIZE = 2 + 4 + 1;
     public static final int SPRITE_SIZE = 4 * VERTEX_SIZE;
@@ -18,7 +20,7 @@ public class BlankBatch extends Batch{
         if(size > 8191) throw new IllegalArgumentException("Can't have more than 8191 sprites per batch: " + size);
 
         if(size > 0){
-            projectionMatrix.setOrtho(0, 0, 2048f, 2048f);
+            projectionMatrix.setOrtho(0, 0, canvasRes, canvasRes);
 
             VertexAttribute pcolor = new VertexAttribute(4, GL20.GL_FLOAT, true, "a_color");
             VertexAttribute ptype = new VertexAttribute(4, GL20.GL_UNSIGNED_BYTE, true, "a_type");
@@ -44,7 +46,6 @@ public class BlankBatch extends Batch{
             }
             mesh.setIndices(indices);
 
-            //TODO replace
             shader = createShader();
         }else{
             vertices = new float[0];

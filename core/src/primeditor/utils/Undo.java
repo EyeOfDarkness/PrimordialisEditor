@@ -7,6 +7,9 @@ import primeditor.creature.*;
 import primeditor.creature.CellTypes.*;
 import primeditor.creature.Creature.*;
 
+import static primeditor.EditorMain.canvasRes;
+import static primeditor.EditorMain.hRes;
+
 public class Undo{
     //Seq<ShortSeq> history = new Seq<>(ShortSeq.class);
     IntSeq[] history = new IntSeq[EditorMain.undoHistoryLimit + 1];
@@ -99,11 +102,11 @@ public class Undo{
         int fr = format & 0xffff;
         int pformat = items[uid++];
 
-        int ix = (pformat & 0xffff) - 1024;
-        int iy = ((pformat >>> 16) & 0xffff) - 1024;
+        int ix = (pformat & 0xffff) - hRes;
+        int iy = ((pformat >>> 16) & 0xffff) - hRes;
 
         //return ((x + 1024) % 2048) + ((y * 2048) + 1024 * 2048);
-        int j = ((ix + 1024) % 2048) + ((iy * 2048) + 1024 * 2048);
+        int j = ((ix + hRes) % canvasRes) + ((iy * canvasRes) + hRes * canvasRes);
 
         if(fr == 2){
             //int ix = next.x + 1024, iy = next.y + 1024;
@@ -146,7 +149,7 @@ public class Undo{
                 format |= 1;
             }
             seq.add(format);
-            int ix = last.x + 1024, iy = last.y + 1024;
+            int ix = last.x + hRes, iy = last.y + hRes;
             int pformat = (ix & 0xffff) | (iy & 0xffff) << 16;
             seq.add(pformat);
 
@@ -158,7 +161,7 @@ public class Undo{
             }
         }else{
             seq.add(2);
-            int ix = next.x + 1024, iy = next.y + 1024;
+            int ix = next.x + hRes, iy = next.y + hRes;
             int pformat = (ix & 0xffff) | ((iy & 0xffff) << 16);
             seq.add(pformat);
         }

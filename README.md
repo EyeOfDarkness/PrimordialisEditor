@@ -11,10 +11,9 @@ WASD and Arrow keys to move the camera.
 Q and E to rotate the camera.
 ScrollWheel to zoom and change values in the color sliders.
 `+` and `-` to change brush size.
-When using the Fill tool, hold Shift to replace all cells that matches the cursor. hold Control to replace cells that matches the color.
+When using the Fill tool, hold Shift to replace all cells that matches the cursor, Control to replace cells that matches the color, and Alt to replace cells without replacing the color.
 
 # Limitations
-- Canvas has a fixed resolution of `2048x2048`.
 - Theres no selection tool.
 - This Editor currently can't load/create Combo Cells. It gets converted to basic cells if you save the creature.
 - Saved creature will have a placeholder name, and cannot be changed in the application.

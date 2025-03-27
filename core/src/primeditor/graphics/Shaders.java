@@ -9,12 +9,17 @@ import arc.math.geom.*;
 import primeditor.*;
 import primeditor.creature.*;
 
+import java.util.*;
+
+import static primeditor.EditorMain.canvasRes;
+import static primeditor.EditorMain.chunks;
+
 public class Shaders{
     static String ds, ds2, ws;
     public static Shader screen;
     public static TypeShader ts;
     public static ColorShader cs;
-    public static RenderShader render;
+    public static MainShader main;
     public static ColorWheelShader colwheel;
 
     public static UpdateShader update;
@@ -55,7 +60,9 @@ public class Shaders{
 
         ts = new TypeShader();
         cs = new ColorShader();
-        render = new RenderShader();
+        //render = new RenderShader();
+        //render2 = new RenderShader2();
+        main = new MainShader();
         test = new TestShader();
         colwheel = new ColorWheelShader();
 
@@ -81,6 +88,7 @@ public class Shaders{
                     gl_FragColor = texture2D(u_texture, v_texCoords);
                 }
                 """);
+        main.updateTypes();
     }
 
     public static class TypeShader extends Shader{
@@ -117,18 +125,17 @@ public class Shaders{
             setUniformi("u_color", 2);
         }
     }
-    public static class RenderShader extends Shader{
+    public static class MainShader extends Shader{
         public Texture color, type;
         public boolean screenshotMode = false;
-        public float scWidth, scHeight, scX, scY;
-
         float[] types;
 
-        RenderShader(){
-            super(Core.files.internal("shaders/rendershader.vert"), Core.files.internal("shaders/rendershader.frag"));
+        MainShader(){
+            super(Core.files.internal("shaders/mainshader.vert"), Core.files.internal("shaders/mainshader.frag"));
+            //super(Core.files.internal("shaders/mainshader.vert").readString(), Core.files.internal("shaders/mainshader.frag").readString());
         }
 
-        public void updateCells(){
+        public void updateTypes(){
             types = new float[128 * 4];
             int i2 = 0;
             for(int i = 0; i < types.length; i += 4){
@@ -147,34 +154,24 @@ public class Shaders{
 
         @Override
         public void apply(){
-            CellTypes.unknown.region.texture.bind(2);
-            type.bind(1);
-            color.bind(0);
-
-            float fs = Math.min(Core.graphics.getWidth(), Core.graphics.getHeight());
-
+            type.bind(2);
+            color.bind(1);
+            CellTypes.unknown.region.texture.bind(0);
             setUniformi("u_texture", 0);
-            setUniformi("u_type", 1);
-            setUniformi("u_main", 2);
+            setUniformi("u_color", 1);
+            setUniformi("u_type", 2);
 
-            if(!screenshotMode){
-                setUniformf("u_aspectRatio", Core.graphics.getWidth() / fs, Core.graphics.getHeight() / fs);
-                setUniformf("u_camScl", Renderer.cs);
-                setUniformf("u_camPos", Renderer.cx, Renderer.cy);
-                setUniformf("u_camTrns", Mathf.cosDeg(-Renderer.cr), Mathf.sinDeg(-Renderer.cr));
-
-                setUniformi("u_showtype", Renderer.showtype ? 1 : 0);
-            }else{
-                setUniformf("u_aspectRatio", scWidth / 2048f, scHeight / 2048f);
-                setUniformf("u_camScl", 1f);
-                setUniformf("u_camPos", scX, scY);
-                setUniformf("u_camTrns", Mathf.cosDeg(-Renderer.cr), Mathf.sinDeg(-Renderer.cr));
-                setUniformi("u_showtype", 2);
-            }
-
+            setUniformi("u_showtype", screenshotMode ? 2 : (Renderer.showtype ? 1 : 0));
+            setUniformf("u_resolution", (canvasRes / (float)chunks) + 2f);
+            setUniformf("u_ires", 1f / ((canvasRes / (float)chunks) + 3f));
+            setUniformf("u_camTrns", Mathf.cosDeg(Renderer.cr), Mathf.sinDeg(Renderer.cr));
             setUniform4fv("u_regions", types, 0, types.length);
+            
+            float fs = Math.min(Core.graphics.getWidth(), Core.graphics.getHeight());
+            setUniformf("u_aspectRatio", Core.graphics.getWidth() / fs, Core.graphics.getHeight() / fs);
         }
     }
+
     public static class ColorWheelShader extends Shader{
         public int mode;
         public float h, s, l, a;

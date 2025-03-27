@@ -4,6 +4,7 @@ import arc.*;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.graphics.g2d.Fill;
+import arc.math.*;
 import arc.struct.*;
 import arc.util.*;
 import primeditor.*;
@@ -14,6 +15,9 @@ import primeditor.utils.*;
 
 import java.util.*;
 
+import static primeditor.EditorMain.canvasRes;
+import static primeditor.EditorMain.hRes;
+
 public class Creature{
     public final EditorFrameBuffer cellCanvas, updateBuffer;
     private static EditorFrameBuffer tmp2;
@@ -23,27 +27,70 @@ public class Creature{
     int comboCount = 0;
     //public Cell[] cells;
     public Seq<Cell> cells2;
-    public Cell[] cellGrid = new Cell[2048 * 2048];
+    public CellChunk[] chunks = new CellChunk[EditorMain.chunks * EditorMain.chunks];
+    public Cell[] cellGrid = new Cell[canvasRes * canvasRes];
     public Seq<Cell> changed = new Seq<>(true, 100, Cell.class);
     //Seq<Cell> tmpCells = new Seq<>();
+    private static Seq<CellChunk> tmpChunks = new Seq<>(true, 4, CellChunk.class);
 
     public Creature(){
-        cellCanvas = new EditorFrameBuffer(2048, 2048);
-        updateBuffer = new EditorFrameBuffer(2048, 2048);
+        cellCanvas = new EditorFrameBuffer(canvasRes, canvasRes);
+        updateBuffer = new EditorFrameBuffer(canvasRes, canvasRes);
         if(tmp2 == null){
-            tmp2 = new EditorFrameBuffer(2048, 2048);
+            tmp2 = new EditorFrameBuffer(canvasRes, canvasRes);
         }
+        for(int cx = 0; cx < EditorMain.chunks; cx++){
+            for(int cy = 0; cy < EditorMain.chunks; cy++){
+                chunks[cx + cy * EditorMain.chunks] = new CellChunk(cx, cy);
+            }
+        }
+    }
+    public CellChunk getChunk(Cell cell){
+        int cx = Mathf.clamp((cell.x + hRes) / (canvasRes / EditorMain.chunks), 0, EditorMain.chunks - 1);
+        int cy = Mathf.clamp((cell.y + hRes) / (canvasRes / EditorMain.chunks), 0, EditorMain.chunks - 1);
+        return chunks[cx + cy * EditorMain.chunks];
+    }
+    public Seq<CellChunk> getChunks(Cell cell){
+        tmpChunks.clear();
+        int cx = Mathf.clamp((cell.x + hRes) / (canvasRes / EditorMain.chunks), 0, EditorMain.chunks - 1);
+        int cy = Mathf.clamp((cell.y + hRes) / (canvasRes / EditorMain.chunks), 0, EditorMain.chunks - 1);
+        final int res = canvasRes / EditorMain.chunks;
+        for(int ix = -1; ix <= 1; ix++){
+            for(int iy = -1; iy <= 1; iy++){
+                int icx = cx + ix;
+                int icy = cy + iy;
+                int dx = (cell.x + hRes) - (icx * res);
+                int dy = (cell.y + hRes) - (icy * res);
+                if(icx >= 0 && icx < EditorMain.chunks && icy >= 0 && icy < EditorMain.chunks && dx >= -1 && dy >= -1 && dx < res + 1 && dy < res + 1){
+                    var chk = chunks[icx + icy * EditorMain.chunks];
+                    //int dx = cell.x - (chk.x - hRes);
+                    //int dy = cell.y - (chk.y - hRes);
+                    tmpChunks.add(chk);
+                }
+            }
+        }
+        
+        return tmpChunks;
     }
 
     public void draw(){
         if(!changed.isEmpty()){
             updateCells();
         }
+        for(CellChunk ch : chunks){
+            ch.update();
+        }
 
+        /*
         var s = Shaders.render;
         s.color = cellCanvas.getTextureAttachments().get(0);
         s.type = cellCanvas.getTextureAttachments().get(1);
         Draw.blit(s);
+        */
+        //Shaders.render2.render(chunks);
+        for(CellChunk c : chunks){
+            c.draw();
+        }
     }
     public void drawTest(){
         Draw.blit(cellCanvas.getTextureAttachments().get(0), Shaders.test);
@@ -126,8 +173,8 @@ public class Creature{
             int cx = reads.i();
             int cy = reads.i();
             if(version <= 2) reads.i();//????
-            int ix = cx + 1024, iy = cy + 1024;
-            if(ix < 0 || ix >= 2048 || iy < 0 || iy >= 2048){
+            int ix = cx + hRes, iy = cy + hRes;
+            if(ix < 0 || ix >= canvasRes || iy < 0 || iy >= canvasRes){
                 continue;
             }
             var c = new Cell();
@@ -150,8 +197,8 @@ public class Creature{
 
     void sortCells(){
         cells2.sort((c1, c2) -> {
-            int p1 = c1.x + c1.y * 2048;
-            int p2 = c2.x + c2.y * 2048;
+            int p1 = c1.x + c1.y * canvasRes;
+            int p2 = c2.x + c2.y * canvasRes;
             return Integer.compare(p1, p2);
         });
         int i = 0;
@@ -178,6 +225,10 @@ public class Creature{
                 if(c2 != null){
                     c2.arrayIdx = id;
                 }
+                var chk = getChunks(c);
+                for(CellChunk ch : chk){
+                    ch.changed.add(c);
+                }
                 continue;
             }
             if(c.added){
@@ -187,63 +238,26 @@ public class Creature{
                 c.added = false;
                 //add = true;
             }
+            //var ch = getChunk(c);
+            //ch.changed.add(c);
+            var chk = getChunks(c);
+            for(CellChunk ch : chk){
+                ch.changed.add(c);
+            }
         }
         /*
-        for(Cell c : changed){
-            if(c.deleted){
-                cells[c.arrayIdx] = null;
-                cellGrid[c.getGPos()] = null;
-                del = true;
-            }
-            if(c.added){
-                tmpCells.add(c);
-                add = true;
-                c.added = false;
-            }
-        }
-        if(del){
-            int cl = cells.length;
-            int i2 = 0;
-            int i = 0;
-            while(i < cl){
-                if(cells[i] != null && !cells[i].deleted){
-                    cells[i2] = cells[i];
-                    cells[i2].arrayIdx = i2;
-                    i2++;
-                }
-                i++;
-            }
-
-            int nl = i2 + tmpCells.size;
-            cells = Arrays.copyOf(cells, nl);
-            if(add){
-                for(Cell c : tmpCells){
-                    cells[i2] = c;
-                    cellGrid[c.getGPos()] = c;
-                    c.arrayIdx = i2;
-                    i2++;
-                }
-                tmpCells.clear();
-            }
-        }else if(add){
-            int nl = cells.length + tmpCells.size;
-            int i = cells.length;
-            cells = Arrays.copyOf(cells, nl);
-            for(Cell c : tmpCells){
-                cells[i] = c;
-                cellGrid[c.getGPos()] = c;
-                c.arrayIdx = i;
-                i++;
-            }
-            tmpCells.clear();
+        for(CellChunk ch : chunks){
+            ch.update();
         }
         */
+        changed.clear();
 
+        /*
         if(dirty){
             var lb = Core.batch;
             Draw.flush();
             Core.batch = Renderer.gridBatch;
-            Draw.proj().setOrtho(-1024f, -1024f, 2048, 2048);
+            Draw.proj().setOrtho(-hRes, -hRes, canvasRes, canvasRes);
             updateBuffer.begin(Color.clear);
             //Gl.clear(depthbufferHandle != 0 ? Gl.colorBufferBit | Gl.depthBufferBit : Gl.colorBufferBit);
             for(Cell c : changed){
@@ -286,8 +300,7 @@ public class Creature{
             GUtils.blit(upl);
             cellCanvas.end();
         }
-
-        changed.clear();
+        */
 
         /*
         if(dirty){
@@ -375,10 +388,11 @@ public class Creature{
 
     public void loadRender(){
         //Draw.proj().setOrtho(-1024f, -1024f, 2048, 2048);
+        /*
         Draw.flush();
         var lb = Core.batch;
         Core.batch = Renderer.gridBatch;
-        Draw.proj().setOrtho(-1024f, -1024f, 2048, 2048);
+        Draw.proj().setOrtho(-hRes, -hRes, canvasRes, canvasRes);
         cellCanvas.begin();
         Core.graphics.clear(Color.clear);
 
@@ -391,6 +405,33 @@ public class Creature{
         Draw.flush();
         cellCanvas.end();
         Core.batch = lb;
+        */
+
+        for(Cell c : cells2){
+            //CellChunk ch = getChunk(c);
+            var chk = getChunks(c);
+            //ch.changed.add(c);
+            for(CellChunk ch : chk){
+                ch.changed.add(c);
+            }
+        }
+        Draw.flush();
+        var lb2 = Core.batch;
+        Core.batch = Renderer.gridBatch;
+        Draw.flush();
+        for(CellChunk ch : chunks){
+            Draw.proj().setOrtho((-hRes + ch.x) - 1, (-hRes + ch.y) - 1, CellChunk.res + 2, CellChunk.res + 2);
+            ch.texture.begin(Color.clear);
+            for(Cell c : ch.changed){
+                Draw.color(c.r, c.g, c.b, c.a);
+                Renderer.gridBatch.setType(c.type.getType());
+                Fill.rect(c.x + 0.5f, c.y + 0.5f, 1f, 1f);
+            }
+            ch.texture.end();
+            ch.changed.clear();
+            Draw.flush();
+        }
+        Core.batch = lb2;
         /*
         var lb = Core.batch;
         Core.batch = Renderer.gridBatch;
@@ -429,8 +470,11 @@ public class Creature{
         drawColor.dispose();
         drawType.dispose();
         */
-        cellCanvas.dispose();
+        //cellCanvas.dispose();
         updateBuffer.dispose();
+        for(CellChunk ch : chunks){
+            ch.dispose();
+        }
     }
 
     public static class Cell{
@@ -445,13 +489,13 @@ public class Creature{
         boolean changed;
 
         int getGX(){
-            return x + 1024;
+            return x + hRes;
         }
         int getGY(){
-            return y + 1024;
+            return y + hRes;
         }
         public int getGPos(){
-            return (getGX() % 2048) + ((y * 2048) + 1024 * 2048);
+            return (getGX() % canvasRes) + ((y * canvasRes) + hRes * canvasRes);
         }
 
         @Override
