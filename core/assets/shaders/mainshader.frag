@@ -71,7 +71,8 @@ void main(){
     //oc = texture2D(u_color, v_texCoords);
     //ot = texture2D(u_type, v_texCoords);
     vec3 nrgb = lintosrgb(oc.rgb);
-    float lum = (nrgb.r + nrgb.g + nrgb.b) * 0.333333;
+    //float lum = (nrgb.r + nrgb.g + nrgb.b) * 0.333333;
+    float lum = ((nrgb.r * 0.325) + (nrgb.g * 0.45) + (nrgb.b * 0.225));
     oc.rgb = lintosrgb(oc.rgb * shdw);
     //oc.rgb = nrgb * shdw;
     if(fcor.x < 1.0 || fcor.y < 1.0 || fcor.x > (u_resolution - 1.0) || fcor.y > (u_resolution - 1.0)){

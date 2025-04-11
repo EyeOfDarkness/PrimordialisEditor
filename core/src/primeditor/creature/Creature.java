@@ -11,7 +11,6 @@ import primeditor.*;
 import primeditor.creature.CellTypes.*;
 import primeditor.graphics.*;
 import primeditor.io.*;
-import primeditor.utils.*;
 
 import java.util.*;
 
@@ -30,8 +29,13 @@ public class Creature{
     public CellChunk[] chunks = new CellChunk[EditorMain.chunks * EditorMain.chunks];
     public Cell[] cellGrid = new Cell[canvasRes * canvasRes];
     public Seq<Cell> changed = new Seq<>(true, 100, Cell.class);
+
+    public Seq<ComboCellType> combos = new Seq<>();
+    public IntMap<ComboCellType> comboMap = new IntMap<>();
     //Seq<Cell> tmpCells = new Seq<>();
-    private static Seq<CellChunk> tmpChunks = new Seq<>(true, 4, CellChunk.class);
+    private static final Seq<CellChunk> tmpChunks = new Seq<>(true, 4, CellChunk.class);
+    private static final OrderedSet<ComboCellType> comboTmp = new OrderedSet<>();
+    private static final ObjectIntMap<CellType> comboSave = new ObjectIntMap<>();
 
     public Creature(){
         cellCanvas = new EditorFrameBuffer(canvasRes, canvasRes);
@@ -44,6 +48,10 @@ public class Creature{
                 chunks[cx + cy * EditorMain.chunks] = new CellChunk(cx, cy);
             }
         }
+        CellTypes.reset();
+        EditorMain.ui.selector.reset();
+        comboTmp.clear();
+        comboSave.clear();
     }
     public CellChunk getChunk(Cell cell){
         int cx = Mathf.clamp((cell.x + hRes) / (canvasRes / EditorMain.chunks), 0, EditorMain.chunks - 1);
@@ -104,13 +112,34 @@ public class Creature{
         for(Cell c : cells2){
             if(c != null){
                 cc++;
+                if(c.type instanceof ComboCellType com){
+                    com.addSet(comboTmp);
+                }
             }
         }
 
         writes.i(cc);
         writes.i(orientation);
+
+        int comboCount = 0;
+        for(ComboCellType com : combos){
+            if(comboTmp.contains(com)){
+                //comboSave.put(0x80000000 + comboCount, com);
+                comboSave.put(com, 0x80000000 + comboCount);
+                comboCount++;
+            }
+        }
+
         //combo count
-        writes.i(0);
+        writes.i(comboCount);
+        for(ComboCellType com : combos){
+            if(comboTmp.contains(com)){
+                //writes.i(comboSave.containsKey());
+                writes.i(comboSave.get(com.a, com.a.type));
+                writes.i(comboSave.get(com.b, com.b.type));
+            }
+        }
+        //writes.i(combos.size);
 
         for(Cell c : cells2){
             if(c != null){
@@ -127,10 +156,40 @@ public class Creature{
             }
         }
         writes.close();
+        comboTmp.clear();
+        comboSave.clear();
+    }
+
+    public void processCombos(){
+        for(ComboCellType c : combos){
+            c.a = comboMap.containsKey(c.ia) ? comboMap.get(c.ia) : CellTypes.get(c.ia);
+            c.b = comboMap.containsKey(c.ib) ? comboMap.get(c.ib) : CellTypes.get(c.ib);
+        }
+        for(ComboCellType c : combos){
+            c.loadDescription();
+            EditorMain.ui.selector.addCombo(c);
+            Log.info(c.desc);
+        }
+    }
+    public void addCombo(ComboCellType combo){
+        comboMap.put(0x80000000 + combos.size, combo);
+        combos.add(combo);
+        EditorMain.ui.selector.addCombo(combo);
     }
 
     public void load(EditorReads reads){
         version = reads.i();
+
+        if(version >= 5){
+            cells2 = new Seq<>(false, (int)(200 * 1.25f), Cell.class);
+
+            Version5.load(this, reads);
+            reads.close();
+
+            loadRender();
+            return;
+        }
+
         int cellCount = reads.i();
         //cells = new Cell[cellCount];
         //cells2 = new Seq<>(false, (int)(cellCount * 1.25f), Cell.class);
@@ -145,14 +204,32 @@ public class Creature{
         Control.setOrientation(orientation - 3);
 
         if(comboCount > 0){
-            //combo unsupported for now.
             for(int i = 0; i < comboCount; i++){
-                reads.skip(8);
+                int id = 0x80000000 + i;
+                int a = reads.i();
+                int b = reads.i();
+                /*
+                CellType ac = CellTypes.get(a);
+                CellType bc = CellTypes.get(b);
+                String as = ac != CellTypes.unknown ? ac.name : Integer.toHexString(a);
+                String bs = bc != CellTypes.unknown ? bc.name : Integer.toHexString(b);
+                //reads.skip(8);
+                Log.info("Cell " + Integer.toHexString(id) + ": " + as + ", " + bs);
+                */
+
+                ComboCellType cmb = new ComboCellType(id);
+                cmb.ia = a;
+                cmb.ib = b;
+                combos.add(cmb);
+                comboMap.put(id, cmb);
             }
         }
+        processCombos();
+
         for(int i = 0; i < cellCount; i++){
             //var c = new Cell();
-            var type = CellTypes.get(reads.i());
+            int it = reads.i();
+            var type = comboCount > 0 && comboMap.containsKey(it) ? comboMap.get(it) : CellTypes.get(it);
             //c.type = CellTypes.get(reads.i());
             //c.arrayIdx = i;
             //c.arrayIdx = cells2.size;
@@ -484,7 +561,7 @@ public class Creature{
 
         public int x, y;
 
-        int arrayIdx;
+        public int arrayIdx;
         public boolean deleted, added;
         boolean changed;
 

@@ -49,6 +49,7 @@ project(":core"){
         api arcModule("arc-core")
         api arcModule("extensions:freetype")
         api arcModule("extensions:flabel")
+        api 'org.lz4:lz4-pure-java:1.8.0'
     }
 }
 

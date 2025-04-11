@@ -108,6 +108,24 @@ public class Control implements ApplicationListener{
         mirrors[9] = mirrors[3];
     }
 
+    public static void setUICell(CellType c){
+        ColorWheel w = ui.mainColorWheel;
+
+        currentCell = c;
+        CellSelector sel = ui.selector;
+        sel.updating = true;
+        sel.group.uncheckAll();
+        ImageButton but = sel.buttonMap.get(c);
+        if(but != null){
+            but.setChecked(true);
+        }
+        sel.updating = false;
+
+        Tmp.c2.set(c.defaultColor);
+        Tmp.c2.toHsv(tmpHsv);
+        w.set(tmpHsv[0], tmpHsv[1], tmpHsv[2], 1f);
+    }
+
     public static void loadBrush(){
         brushes = new int[16][0];
         maxBrushSize = 0;

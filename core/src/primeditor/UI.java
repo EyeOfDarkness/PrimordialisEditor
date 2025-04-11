@@ -9,6 +9,7 @@ import arc.graphics.g2d.Font;
 import arc.scene.*;
 import arc.scene.style.*;
 import arc.scene.ui.Button.*;
+import arc.scene.ui.Dialog.*;
 import arc.scene.ui.ImageButton.*;
 import arc.scene.ui.Label.*;
 import arc.scene.ui.ProgressBar.*;
@@ -30,6 +31,7 @@ public class UI implements ApplicationListener{
     public Drawable mainDown = Core.atlas.drawable("button-down");
     //public Drawable bdown = ((TextureRegionDrawable)Core.atlas.drawable("white")).tint(0.4f, 0.4f, 0.4f, 0.4f);
     public Drawable clear = Core.atlas.drawable("clear");
+    public Drawable white = Core.atlas.drawable("white");
     public Font def;
 
     public ColorWheel mainColorWheel;
@@ -37,20 +39,25 @@ public class UI implements ApplicationListener{
     public Tools tools;
     public Palette palette;
 
+    public ComboDialog comboDialog;
+
     public TextButtonStyle button;
     public ButtonStyle buttonChecked;
     public SliderStyle sliderStyle;
     public TextFieldStyle tfStyle;
     public ScrollPaneStyle scrollStyle;
+    public DialogStyle dialogStyle;
+
+    public CellDescription desc;
 
     @Override
     public void init(){
         Core.scene = new Scene();
         Core.input.addProcessor(Core.scene);
 
-        FreeTypeFontGenerator gen = new FreeTypeFontGenerator(Core.files.internal("fonts/audiowide.ttf"));
+        FreeTypeFontGenerator gen = new FreeTypeFontGenerator(Core.files.internal("fonts/font.ttf"));
         def = gen.generateFont(new FreeTypeFontParameter(){{
-            size = 12;
+            size = 13;
             incremental = true;
         }});
         Core.scene.addStyle(LabelStyle.class, new LabelStyle(){{
@@ -98,6 +105,10 @@ public class UI implements ApplicationListener{
             //background = main;
             vScroll = main;
             vScrollKnob = main;
+        }});
+        Core.scene.addStyle(DialogStyle.class, dialogStyle = new DialogStyle(){{
+            background = main;
+            titleFont = def;
         }});
 
         setup();
@@ -147,6 +158,8 @@ public class UI implements ApplicationListener{
             }).height(50f).width(500f).top().left().margin(3f);
         });
         //Core.scene.add(mainColorWheel = new ColorWheel());
+        comboDialog = new ComboDialog();
+        desc = new CellDescription();
         mainColorWheel = new ColorWheel();
         selector = new CellSelector();
         tools = new Tools();
@@ -157,11 +170,14 @@ public class UI implements ApplicationListener{
         Core.scene.table(t -> {
             t.right().add(selector).right();
         });
+        //Core.scene.add(selector.desc2);
         Core.scene.table(t -> {
             t.left().add(tools).left();
         });
         Core.scene.table(t -> {
             t.right().bottom().add(palette).right().bottom();
         });
+        Core.scene.add(desc);
+        //desc.toFront();
     }
 }
