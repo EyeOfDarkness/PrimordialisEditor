@@ -15,7 +15,6 @@ When using the Fill tool, hold Shift to replace all cells that matches the curso
 
 # Limitations
 - Theres no selection tool.
-- This Editor currently can't load/create Combo Cells. It gets converted to basic cells if you save the creature.
 - Saved creature will have a placeholder name, and cannot be changed in the application.
 - Undo History Limit is currently 8.
 - Fill tool has a range of 250 if used on an empty cell, 800 otherwise.
