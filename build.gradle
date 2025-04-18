@@ -24,7 +24,12 @@ buildscript{
 }
 
 allprojects{
+    apply plugin: "java"
+
     version = 'dev'
+    
+    targetCompatibility = 8
+    sourceCompatibility = JavaVersion.VERSION_17
 
     ext{
         appName = "PrimEditor"
@@ -39,6 +44,15 @@ allprojects{
         maven{ url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven{ url "https://oss.sonatype.org/content/repositories/releases/" }
         maven{ url 'https://jitpack.io' }
+    }
+    
+    dependencies{
+        annotationProcessor "com.github.Anuken:jabel:93fde537c7"
+    }
+    
+    tasks.withType(JavaCompile){
+        sourceCompatibility = JavaVersion.VERSION_17
+        options.release = 8
     }
 }
 
