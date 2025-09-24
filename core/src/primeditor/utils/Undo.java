@@ -118,7 +118,7 @@ public class Undo{
                 creature.changed.add(c);
             }
         }else{
-            CellType ct = CellTypes.types.get(type);
+            CellType ct = CellTypes.all().get(type);
 
             Cell c = creature.cellGrid[j];
             if(c == null){

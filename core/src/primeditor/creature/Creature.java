@@ -106,6 +106,12 @@ public class Creature{
 
     public void save(EditorWrites writes){
         //writes.i(version);
+
+        if(EditorMain.saveVersion == 5){
+            Version5.save(this, writes);
+            return;
+        }
+
         writes.i(4);
 
         int cc = 0;

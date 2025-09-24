@@ -83,7 +83,7 @@ public class CellTypes{
 
     public static class CellType{
         public int id;
-        int type;
+        public int type;
         public boolean hidden = false;
 
         public TextureRegion region;

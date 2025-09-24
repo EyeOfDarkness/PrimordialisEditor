@@ -29,6 +29,7 @@ public class EditorMain extends ApplicationCore{
     public static Fi source;
     public static Creature creature;
 
+    public static int saveVersion = 5;
     public static int undoHistoryLimit = 8;
     public static int canvasRes = 4096;
     //public final static int canvasRes = 2048;

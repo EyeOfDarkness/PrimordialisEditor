@@ -9,6 +9,7 @@ import primeditor.creature.*;
 import primeditor.creature.CellTypes.*;
 import primeditor.creature.Creature.*;
 
+import java.nio.*;
 import java.util.*;
 
 import static primeditor.EditorMain.canvasRes;
@@ -156,7 +157,156 @@ public class Version5{
         colorMap.clear();
     }
     public static void save(Creature creature, EditorWrites r){
-        //
+		if(creature.cells2.size <= 0){
+			r.i(5);
+			r.l(0);
+			r.l(0);
+			return;
+		}
+		
+        Seq<Color> colors = new Seq<>();
+        IntIntMap colorMap = new IntIntMap();
+
+        Seq<CellType> allCells = new Seq<>();
+        ObjectIntMap<CellType> allMap = new ObjectIntMap<>();
+
+        Seq<CellType> norCells = new Seq<>();
+        IntIntMap norMap = new IntIntMap();
+
+        //Seq<ComboCellType> comCells = new Seq<>();
+        ObjectSet<ComboCellType> comSet = new ObjectSet<>();
+
+        int minX = 500000, minY = 500000, maxX = -500000, maxY = -500000;
+
+        for(Cell c : creature.cells2){
+            if(!(c.type instanceof ComboCellType cc)){
+                if(!norMap.containsKey(c.type.type)){
+                    norMap.put(c.type.type, norCells.size);
+                    norCells.add(c.type);
+                    //allCells.add(c.type);
+                    allCells.add(c.type);
+                }
+            }else{
+                cc.addSet(comSet);
+            }
+
+            Tmp.c1.set(c.r, c.g, c.b, c.a);
+            int hc;
+            if(!colorMap.containsKey(hc = Tmp.c1.hashCode()) && !defaultColor(c)){
+                colorMap.put(hc, colors.size + 1);
+                colors.add(Tmp.c1.cpy());
+            }
+
+            minX = Math.min(minX, c.x);
+            minY = Math.min(minY, c.y);
+            maxX = Math.max(maxX, c.x);
+            maxY = Math.max(maxY, c.y);
+        }
+
+        ObjectIntMap<CellType> comboSave = new ObjectIntMap<>();
+        IntSeq comboData = new IntSeq();
+        int comboCount = 0;
+        for(ComboCellType cc : creature.combos){
+            if(comSet.contains(cc)){
+                comboSave.put(cc, 0x80000000 + comboCount);
+                comboCount++;
+                allCells.add(cc);
+            }
+        }
+        for(ComboCellType cc : creature.combos){
+            if(comSet.contains(cc)){
+                //writes.i(comboSave.get(com.a, com.a.type));
+                //writes.i(comboSave.get(com.b, com.b.type));
+                comboData.add(comboSave.get(cc.a, cc.a.type));
+                comboData.add(comboSave.get(cc.b, cc.b.type));
+            }
+        }
+        int i = 1;
+        for(CellType ac : allCells){
+            allMap.put(ac, i);
+            i++;
+        }
+
+        /*4*(ux-lx)*(uy-ly) bytes: cell_type_array
+        4*(ux-lx)*(uy-ly) bytes: cell_color_array*/
+        int size = 4 * 8 + 4 * norCells.size + 8 * comboCount + 16 * colors.size + 4*(maxX-minX)*(maxY-minY)*2;
+        ByteBuffer buffer = ByteBuffer.allocate(size);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.position(0);
+        //buffer.put((byte)4);
+
+        buffer.putInt(creature.orientation);
+        buffer.putInt(norCells.size);
+        buffer.putInt(comboCount);
+        buffer.putInt(colors.size);
+
+        buffer.putInt(minX);
+        buffer.putInt(minY);
+        buffer.putInt(maxX);
+        buffer.putInt(maxY);
+
+        for(CellType nc : norCells){
+            buffer.putInt(nc.type);
+        }
+        for(int j = 0; j < comboData.size; j += 2){
+            int a = comboData.items[j];
+            int b = comboData.items[j + 1];
+            buffer.putInt(a);
+            buffer.putInt(b);
+        }
+        for(Color c : colors){
+            buffer.putFloat(c.r);
+            buffer.putFloat(c.g);
+            buffer.putFloat(c.b);
+            buffer.putFloat(c.a);
+        }
+
+        int width = maxX - minX;
+        int height = maxY - minY;
+        int len = width * height;
+        for(int j = 0; j < len; j++){
+            int ix = (j % width) + minX, iy = (j / width) + minY;
+
+            //return (getGX() % canvasRes) + ((y * canvasRes) + hRes * canvasRes);
+            int gidx = ix + hRes + ((iy * canvasRes) + hRes * canvasRes);
+            var c = creature.cellGrid[gidx];
+
+            if(c == null){
+                buffer.putInt(0);
+            }else{
+                buffer.putInt(allMap.get(c.type, 0));
+            }
+        }
+        for(int j = 0; j < len; j++){
+            int ix = (j % width) + minX, iy = (j / width) + minY;
+
+            int gidx = ix + hRes + ((iy * canvasRes) + hRes * canvasRes);
+            var c = creature.cellGrid[gidx];
+
+            if(c == null){
+                buffer.putInt(0);
+            }else{
+                buffer.putInt(colorMap.get(Tmp.c1.set(c.r, c.g, c.b, c.a).hashCode(), 0));
+            }
+        }
+
+        var ins = LZ4Factory.safeInstance();
+        var cmp = ins.fastCompressor();
+
+        //ByteBuffer dest = ByteBuffer.allocateDirect(1024);
+        //cmp.compress(buffer, dest);
+        byte[] out = cmp.compress(buffer.array());
+        //dest.capacity()
+        r.i(5);
+        r.l(out.length);
+        r.l(size);
+        r.w.b(out);
+		r.close();
+    }
+
+    static boolean defaultColor(Cell c){
+        Color d = c.type.defaultColor;
+        return c.r == d.r && c.g == d.g && c.b == d.b && c.a == d.a;
     }
 
     static class PseudoRead{

@@ -30,6 +30,20 @@ public class EditorWrites{
         w.i(out);
     }
 
+    public void l(long v){
+        long b0 = (v >>> 56) & 0xff;
+        long b1 = (v >>> 48) & 0xff;
+        long b2 = (v >>> 40) & 0xff;
+        long b3 = (v >>> 32) & 0xff;
+        long b4 = (v >>> 24) & 0xff;
+        long b5 = (v >>> 16) & 0xff;
+        long b6 = (v >>> 8) & 0xff;
+        long b7 = v & 0xff;
+
+        long out = (b7 << 56L) | (b6 << 48L) | (b5 << 40L) | (b4 << 32L) | (b3 << 24L) | (b2 << 16L) | (b1 << 8L) | b0;
+        w.l(out);
+    }
+
     public void f(float v){
         i(Float.floatToRawIntBits(v));
     }

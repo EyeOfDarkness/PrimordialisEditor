@@ -143,7 +143,7 @@ public class UI implements ApplicationListener{
                         }
                     }).height(40f).width(120f).expandX().left();
                     c2.button("save", button, () -> {
-                        if(EditorMain.creature == null) return;
+                        if(EditorMain.creature == null || EditorMain.creature.cells2.isEmpty()) return;
                         Fi dd = Core.settings.getDataDirectory();
                         Fi bodd = dd.child("creatures/");
                         String name = "CreatureT" + (Time.millis() / 1000);
