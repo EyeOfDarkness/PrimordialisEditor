@@ -202,6 +202,8 @@ public class Version5{
             maxX = Math.max(maxX, c.x);
             maxY = Math.max(maxY, c.y);
         }
+		maxX += 1;
+		maxY += 1;
 
         ObjectIntMap<CellType> comboSave = new ObjectIntMap<>();
         IntSeq comboData = new IntSeq();
